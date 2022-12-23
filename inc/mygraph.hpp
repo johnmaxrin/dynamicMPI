@@ -40,4 +40,5 @@ class Graph{
 
     int32_t getNodeCount();
     bool isEdge();
+    std::map<int32_t,std::vector<Edge>> const getEdges();
 };

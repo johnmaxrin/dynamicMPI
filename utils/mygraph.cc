@@ -94,12 +94,7 @@ void Graph::buildGraph(int rank, int size)
 // END
 
 
-int32_t Graph::getNodeCount()
-{
-    return totalNodes;
-}
+int32_t Graph::getNodeCount() {return totalNodes;}
 
-bool Graph::isEdge()
-{
-    return true;
-}
+//std::map<int32_t,std::vector<Edge>> Graph::getEdges() {return edges;}
+bool Graph::isEdge() {return true;}

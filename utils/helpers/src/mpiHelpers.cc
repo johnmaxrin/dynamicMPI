@@ -14,22 +14,28 @@ MPI_Type_commit(&mpi_type);
 */
 
 
+    
 
 int createMPIGraphDataType(MPI_Datatype *graph)
 {
     // Creating the edge datatype.
+    MPI_Datatype edgeType;
     int blocklengths[EDGECLASSELEMENTSCOUNT] = {1, 1, 1, 1};
-    MPI_Aint displacements[EDGECLASSELEMENTSCOUNT] = {offsetof(Edge, source), offsetof(Edge, destination), offsetof(Edge, weight), offsetof(Edge, id)};
     MPI_Datatype types[EDGECLASSELEMENTSCOUNT] = {MPI_INT32_T, MPI_INT32_T, MPI_INT32_T, MPI_INT32_T};
-    MPI_Datatype edge_type;
-    int res = MPI_Type_create_struct(4, blocklengths, displacements, types, graph);
-    printf("Successfully created Edge Data type \n");
+    MPI_Aint displacements[EDGECLASSELEMENTSCOUNT] = {offsetof(Edge, source), offsetof(Edge, destination), offsetof(Edge, weight), offsetof(Edge, id)};
+    int res = MPI_Type_create_struct(4, blocklengths, displacements, types, &edgeType);
     if (res != MPI_SUCCESS) return res;
 
     // Creating Map::Vector<Edge> datatype
-    MPI_Datatype map_type;
-    int blocklenghts[] = {1,1};
-    //MPI_Aint offsets[] = {offsetof(std::pair<int, std::vector<Edge>>, first),offsetof(std::pair<int, std::vector<Edge>>, second)};
+    MPI_Datatype mapType;
+    int blocklenghts[MAPPAIRCOUNT] = {1,1}; 
+    MPI_Datatype types[MAPPAIRCOUNT] = {MPI_INT32_T, edgeType};
+
+    //To find the offset of second member
+    MPI_Aint mapBase, vecBase;
+    //MPI_Get_address(std::begin(Graph::getEdges()),&mapBase);
+    //MPI_Get_address(std::begin(std::vector<Edge>()), &vecBase);
+
 
 
     return 0;
