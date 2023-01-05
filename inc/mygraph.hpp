@@ -8,7 +8,9 @@
 #include<algorithm>
 #include<string.h>
 #include "../global/mpiglobal.hpp"
-#include"../utils/helpers/inc/mpiHelpers.hpp"
+
+#ifndef MY_GRAPH
+#define MY_GRAPH
 
 class Edge{
     public:
@@ -39,6 +41,12 @@ class Graph{
     void buildGraph(int,int);
 
     int32_t getNodeCount();
+    int32_t getEdgeCount();
+    const char * getFileName();
+    std::map<int32_t,std::vector<Edge>> getEdges(); 
+    
+    
     bool isEdge();
-    std::map<int32_t,std::vector<Edge>> const getEdges();
 };
+
+#endif

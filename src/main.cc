@@ -1,27 +1,30 @@
 #include "../inc/mygraph.hpp"
+#include "../utils/helpers/inc/mpiHelpers.hpp"
 
 int main(int c, char *argv[])
 {
 
     Graph graph(argv[1]);
-    
+
     MPI_Init(NULL, NULL);
     int rank, worldSize;
     GENMPI(&rank, &worldSize, COMMONWORLD);
-    
+
     MPI_Datatype MPI_STAR_GRAPH;
 
+    int a = createMPIGraphDataType(&MPI_STAR_GRAPH, graph);
+
     if (rank == 0)
-    {
+        printf("[#] Successfully created the Graph datatype \n");
 
-        int a = createMPIGraphDataType(&MPI_STAR_GRAPH);
+    if (rank == 0)
         graph.initGraph();
-        printf("%d Number of Nodes \n", graph.getNodeCount());
-        MPI_Type_free(&MPI_STAR_GRAPH);
-    }
-    MPIBARRIER(COMMONWORLD);
-    printf("Total Nodes: %d \n", graph.getNodeCount());
-    graph.buildGraph(rank,worldSize);
 
+    MPIBARRIER(COMMONWORLD);
+    MPI_Bcast(&graph, 1, MPI_STAR_GRAPH,0,COMMONWORLD);
+    MPIBARRIER(COMMONWORLD);
+    graph.buildGraph(rank, worldSize);
+
+    destroyMPIGraphDataType(&MPI_STAR_GRAPH);
     MPI_Finalize();
 }
