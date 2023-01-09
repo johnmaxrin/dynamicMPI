@@ -1,30 +1,30 @@
 #include "../inc/mygraph.hpp"
-#include "../utils/helpers/inc/mpiHelpers.hpp"
+#include <boost/mpi.hpp>
 
-int main(int c, char *argv[])
+int main(int argc, char *argv[])
 {
-
     Graph graph(argv[1]);
 
-    MPI_Init(NULL, NULL);
-    int rank, worldSize;
-    GENMPI(&rank, &worldSize, COMMONWORLD);
+    
+    boost::mpi::environment env(argc, argv);
+    boost::mpi::communicator world;
 
-    MPI_Datatype MPI_STAR_GRAPH;
-
-    int a = createMPIGraphDataType(&MPI_STAR_GRAPH, graph);
+    int rank = world.rank();
 
     if (rank == 0)
-        printf("[#] Successfully created the Graph datatype \n");
-
-    if (rank == 0)
+    {
+        printf("[#] Inside rank 0\n");
         graph.initGraph();
+    }
 
     MPIBARRIER(COMMONWORLD);
-    MPI_Bcast(&graph, 1, MPI_STAR_GRAPH,0,COMMONWORLD);
+    boost::mpi::broadcast(world, graph, 0);
     MPIBARRIER(COMMONWORLD);
-    graph.buildGraph(rank, worldSize);
 
-    destroyMPIGraphDataType(&MPI_STAR_GRAPH);
+    for (int i = 0; i < graph.getNodeCount(); ++i)
+        graph.buildGraph(rank, world.size(), i);
+
     MPI_Finalize();
+
+    return 0;
 }

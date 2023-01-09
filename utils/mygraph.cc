@@ -1,28 +1,29 @@
-#include"../inc/mygraph.hpp"
-#include"../global/mpiglobal.hpp"
+#include "../inc/mygraph.hpp"
+#include "../global/mpiglobal.hpp"
+#include <boost/serialization/serialization.hpp>
 
 using namespace std;
-
 
 void Graph::initGraph()
 {
     std::fstream infile;
-    
+
     std::string line;
     infile.open(graphFile);
 
-    
-    if(!infile.is_open()){
+    if (!infile.is_open())
+    {
         printf("[error] File not found \n");
         exit(0);
     }
 
-    printf("[#] Building graph from %s\n",graphFile);
-    while(std::getline(infile,line)){
-        
-        if(line.length()==0 || line[0] < '0' || line[0] > '9')
+    printf("[#] Building graph from %s\n", graphFile.c_str());
+    while (std::getline(infile, line))
+    {
+
+        if (line.length() == 0 || line[0] < '0' || line[0] > '9')
             continue;
-        
+
         std::stringstream ss(line);
         totalEdges++;
 
@@ -31,12 +32,12 @@ void Graph::initGraph()
         int32_t destination;
         int32_t weight;
 
-        ss>>source;
-        if(source > totalNodes)
+        ss >> source;
+        if (source > totalNodes)
             totalNodes = source;
-        
-        ss>>destination;
-        if(destination > totalNodes)
+
+        ss >> destination;
+        if (destination > totalNodes)
             totalNodes = destination;
 
         edge.source = source;
@@ -46,21 +47,17 @@ void Graph::initGraph()
 
         edges[source].push_back(edge);
 
-        ss>>weight;
-        
+        ss >> weight;
     }
 
     ++totalNodes; // Graph starts from 0
     infile.close();
     printf("[#] Edges parsed \n");
 
-    printf("[#] Showing edges \n");
-    std::vector<Edge> testEdge;
-
-    // Write code for sorting in MPI. 
-    // For this we need Total nodes, Total Process, divide the edges among process and do the sorting ! 
+    // Write code for sorting in MPI.
+    // For this we need Total nodes, Total Process, divide the edges among process and do the sorting !
     // STARPLAT_MPI_SORT_NEIGHBOURS(edges)
-    
+
     /* for(int i=0; i<totalNodes; ++i)
     {
         testEdge = edges[i];
@@ -70,33 +67,40 @@ void Graph::initGraph()
             printf("%d ",testEdge[j].destination);
         }
 
-        printf("\n");    
+        printf("\n");
     } */
-
-    printf("[#] Graph built successfully\n");
-
 }
 
-// --- Paralell --- 
-void Graph::buildGraph(int rank, int size)
-{   
-    if(size != 0){
-    
-    int n = totalNodes/size;
-    printf("%d --> in Rank %d \n",n,rank);
+// --- Paralell ---
+void Graph::buildGraph(int rank, int size, int index)
+{
+    if (size != 0)
+    {
+
+        if (index % size == rank)
+        {
+
+            printf("Rank: %d Total Nodes: %d Total Edges: %d Edges Size: %d\n", rank, totalNodes, totalEdges, edges[0][0].destination);
+        }
     }
 
-    else{
+    else
+    {
         printf("[error] Number of processor cannot be zero");
     }
-    
 }
 // END
 
+int32_t Graph::getNodeCount() { return totalNodes; }
+int32_t Graph::getEdgeCount() { return totalEdges; }
+std::string Graph::getFileName() { return graphFile; }
+std::map<int32_t, std::vector<Edge>> Graph::getEdges() { return edges; }
 
-int32_t Graph::getNodeCount() {return totalNodes;}
-int32_t Graph::getEdgeCount() {return totalEdges;}
-const char * Graph::getFileName() {return graphFile;}
-std::map<int32_t,std::vector<Edge>> Graph::getEdges() {return edges;}
+bool Graph::isEdge() { return true; }
 
-bool Graph::isEdge() {return true;}
+
+
+
+
+
+
