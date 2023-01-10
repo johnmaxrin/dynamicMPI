@@ -1,6 +1,12 @@
+/*
+Starplat MPI Graph class implementation.
+
+--- Provide documentation here ---
+
+@Starplat MPI backend.
+*/
+
 #include "../inc/mygraph.hpp"
-#include "../global/mpiglobal.hpp"
-#include <boost/serialization/serialization.hpp>
 
 using namespace std;
 
@@ -50,43 +56,68 @@ void Graph::initGraph()
         ss >> weight;
     }
 
-    ++totalNodes; // Graph starts from 0
+    ++totalNodes;
+
     infile.close();
     printf("[#] Edges parsed \n");
 
-    // Write code for sorting in MPI.
-    // For this we need Total nodes, Total Process, divide the edges among process and do the sorting !
-    // STARPLAT_MPI_SORT_NEIGHBOURS(edges)
-
-    /* for(int i=0; i<totalNodes; ++i)
-    {
-        testEdge = edges[i];
-        printf("Elements of %d \n",i);
-        for(int j=0; j<testEdge.size(); ++j)
-        {
-            printf("%d ",testEdge[j].destination);
-        }
-
-        printf("\n");
-    } */
+    /*
+        Our graphs are designed so that the
+        node with the largest number +1
+        gives us the total number of nodes.
+    */
 }
 
-// --- Paralell ---
-void Graph::buildGraph(int rank, int size, int index)
+// --- Paralell --- //
+void Graph::buildGraph(boost::mpi::communicator world, Graph &graph)
 {
-    if (size != 0)
+    if (world.size() != 0)
     {
 
-        if (index % size == rank)
-        {
+        /* Sort Edge List */
 
-            printf("Rank: %d Total Nodes: %d Total Edges: %d Edges Size: %d\n", rank, totalNodes, totalEdges, edges[0][0].destination);
-        }
+        /*
+            Create edge vector in order to use scatter.
+            Our edges are store as map but Boost scatter doesn't
+            have the ability to scatter Map among process. So we
+            will be converting it to a vector and after scattering
+            converting back to map.
+        */
+        std::vector<std::pair<int, std::vector<Edge>>> edgesVector;
+        std::vector<int> recvCount(world.size());        
+
+        if(world.rank() == MASTER)
+            convertEdgestoVector(edgesVector,graph);
+        
+        boost::mpi::broadcast(world,edgesVector,MASTER);
+        
+        for(int i=0; i<world.size(); ++i)
+            recvCount[i] = (totalNodes/world.size()) + (i<(totalNodes%world.size()));
+
+        
+        std::vector<pair<int32_t ,std::vector<Edge>>> localEdgesVector(recvCount[world.rank()]);
+        
+        boost::mpi::scatterv(world,edgesVector.data(),recvCount,localEdgesVector.data(),MASTER);
+        std::map<int32_t, std::vector<Edge>> localEdgesMap;
+        convertVectorstoEdges(localEdgesMap,localEdgesVector);
+
+        printf("Size: %ld",localEdgesMap.size());
+
+
+        // edgesVector is now a vector of edges.
+
+       // for (const auto &[key, value] : edged)
+       // {
+       //     edgesVector.emplace_back(key, value);
+       // }
+
+        //boost::mpi::scatter(world, edges, localEdges, 0);
     }
 
     else
     {
         printf("[error] Number of processor cannot be zero");
+        exit(0);
     }
 }
 // END
@@ -97,10 +128,3 @@ std::string Graph::getFileName() { return graphFile; }
 std::map<int32_t, std::vector<Edge>> Graph::getEdges() { return edges; }
 
 bool Graph::isEdge() { return true; }
-
-
-
-
-
-
-

@@ -7,8 +7,12 @@
 #include <mpi.h>
 #include <algorithm>
 #include <string.h>
+
 #include "../global/mpiglobal.hpp"
+#include "../utils/helpers/inc/boostMPIHelpers.hpp"
+
 #include <boost/mpi.hpp>
+#include <boost/mpi/collectives.hpp>
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/map.hpp>
@@ -38,41 +42,43 @@ private:
     }
 };
 
-    class Graph
+class Graph
+{
+private:
+    int32_t totalNodes;
+    int32_t totalEdges;
+    std::string graphFile;
+    std::map<int32_t, std::vector<Edge>> edges;
+    
+    // F.R.I.E.N.D.S
+    friend void convertEdgestoVector(std::vector<std::pair<int, std::vector<Edge>>> &edgesVector, Graph &graph);
+    friend class boost::serialization::access;
+    template <typename Archive>
+    void serialize(Archive &ar, const unsigned int version)
     {
-    private:
-        int32_t totalNodes;
-        int32_t totalEdges;
-        std::string  graphFile;
-        std::map<int32_t, std::vector<Edge>> edges;
+        ar &totalNodes;
+        ar &totalEdges;
+        ar &graphFile;
+        ar &edges;
+    }
 
-        friend class boost::serialization::access;
-        template <typename Archive>
-        void serialize(Archive &ar, const unsigned int version)
-        {
-            ar &totalNodes;
-            ar &totalEdges;
-            ar &graphFile;
-            ar &edges;
-        }
+public:
+    Graph(std::string file)
+    {
+        graphFile = file;
+        totalNodes = 0;
+        totalEdges = 0;
+    }
 
-    public:
-        Graph(std::string file)
-        {
-            graphFile = file;
-            totalNodes = 0;
-            totalEdges = 0;
-        }
+    void initGraph();
+    void buildGraph(boost::mpi::communicator, Graph &graph);
 
-        void initGraph();
-        void buildGraph(int, int, int);
+    int32_t getNodeCount();
+    int32_t getEdgeCount();
+    std::string getFileName();
+    std::map<int32_t, std::vector<Edge>> getEdges();
 
-        int32_t getNodeCount();
-        int32_t getEdgeCount();
-        std::string getFileName();
-        std::map<int32_t, std::vector<Edge>> getEdges();
-
-        bool isEdge();
-    };
+    bool isEdge();
+};
 
 #endif

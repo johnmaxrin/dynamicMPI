@@ -8,6 +8,7 @@
     MPI_Comm_size(world, size); \
     MPI_Comm_rank(world, rank); \
 
+#define MASTER 0
 
 #define MPIBARRIER(world) MPI_Barrier(world);
 

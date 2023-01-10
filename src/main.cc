@@ -16,13 +16,10 @@ int main(int argc, char *argv[])
         printf("[#] Inside rank 0\n");
         graph.initGraph();
     }
-
     MPIBARRIER(COMMONWORLD);
     boost::mpi::broadcast(world, graph, 0);
-    MPIBARRIER(COMMONWORLD);
 
-    for (int i = 0; i < graph.getNodeCount(); ++i)
-        graph.buildGraph(rank, world.size(), i);
+    graph.buildGraph(world, graph);
 
     MPI_Finalize();
 
