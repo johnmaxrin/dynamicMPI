@@ -84,34 +84,34 @@ void Graph::buildGraph(boost::mpi::communicator world, Graph &graph)
             converting back to map.
         */
         std::vector<std::pair<int, std::vector<Edge>>> edgesVector;
-        std::vector<int> recvCount(world.size());        
+        std::vector<int> recvCount(world.size());
 
-        if(world.rank() == MASTER)
-            convertEdgestoVector(edgesVector,graph);
-        
-        boost::mpi::broadcast(world,edgesVector,MASTER);
-        
-        for(int i=0; i<world.size(); ++i)
-            recvCount[i] = (totalNodes/world.size()) + (i<(totalNodes%world.size()));
+        if (world.rank() == MASTER)
+            convertEdgestoVector(edgesVector, graph);
 
-        
-        std::vector<pair<int32_t ,std::vector<Edge>>> localEdgesVector(recvCount[world.rank()]);
-        
-        boost::mpi::scatterv(world,edgesVector.data(),recvCount,localEdgesVector.data(),MASTER);
+        boost::mpi::broadcast(world, edgesVector, MASTER);
+
+        populateDisplacement(totalNodes, world.size(), recvCount);
+        std::vector<pair<int32_t, std::vector<Edge>>> localEdgesVector(recvCount[world.rank()]);
+
+        boost::mpi::scatterv(world, edgesVector.data(), recvCount, localEdgesVector.data(), MASTER);
         std::map<int32_t, std::vector<Edge>> localEdgesMap;
-        convertVectorstoEdges(localEdgesMap,localEdgesVector);
+        convertVectorstoEdges(localEdgesMap, localEdgesVector);
 
-        printf("Size: %ld",localEdgesMap.size());
+        for (int32_t i = 0; i < localEdgesMap.size(); ++i)
+        {
+            std::vector<Edge> &e = localEdgesMap[i];
+            sort(e.begin(), e.end(),
+                 [](const Edge &e1, const Edge &e2)
+                 {
+                     if (e1.source != e2.source)
+                         return e1.source < e2.source;
+
+                     return e1.destination < e2.destination;
+                 });
+        }
 
 
-        // edgesVector is now a vector of edges.
-
-       // for (const auto &[key, value] : edged)
-       // {
-       //     edgesVector.emplace_back(key, value);
-       // }
-
-        //boost::mpi::scatter(world, edges, localEdges, 0);
     }
 
     else

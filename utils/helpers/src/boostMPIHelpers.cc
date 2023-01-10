@@ -15,4 +15,8 @@ void convertVectorstoEdges(std::map<int32_t, std::vector<Edge>> &localEdgesMap, 
               std::inserter(localEdgesMap, localEdgesMap.begin()));
 }
 
-void populateDisplacement();
+void populateDisplacement(int total, int size, std::vector<int> &recvCount)
+{
+    for (int i = 0; i < size; ++i)
+        recvCount[i] = (total / size) + (i < (total % size));
+}
