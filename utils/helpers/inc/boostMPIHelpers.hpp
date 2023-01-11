@@ -2,6 +2,7 @@
 #define BOOST_MPI_HELPERS
 
 #include "../../../inc/mygraph.hpp"
+#include <boost/sort/sort.hpp> 
 
 void convertEdgestoVector(std::vector<std::pair<int, std::vector<Edge>>> &edgesVector, Graph &graph);
 void convertVectorstoEdges(std::map<int32_t, std::vector<Edge>> &localEdgesMap, std::vector<std::pair<int, std::vector<Edge>>> &localEdgesVector);
@@ -9,4 +10,6 @@ void convertVectorstoEdges(std::map<int32_t, std::vector<Edge>> &localEdgesMap, 
 /* Add Documentation for this function */
 void populateDisplacement(int total, int size, std::vector<int> &recvCount);
 
+
+void boostSortNeighbours(std::vector<Edge> &e);
 #endif

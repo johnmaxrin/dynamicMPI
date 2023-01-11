@@ -98,18 +98,23 @@ void Graph::buildGraph(boost::mpi::communicator world, Graph &graph)
         std::map<int32_t, std::vector<Edge>> localEdgesMap;
         convertVectorstoEdges(localEdgesMap, localEdgesVector);
 
+        // Do the sorting -- Paralell -- 
         for (int32_t i = 0; i < localEdgesMap.size(); ++i)
-        {
-            std::vector<Edge> &e = localEdgesMap[i];
-            sort(e.begin(), e.end(),
-                 [](const Edge &e1, const Edge &e2)
-                 {
-                     if (e1.source != e2.source)
-                         return e1.source < e2.source;
+            boostSortNeighbours(localEdgesMap[i]);
+            
+        if(world.rank() == 0)
+            printf("[#] Done sorting \n");
 
-                     return e1.destination < e2.destination;
-                 });
-        }
+        
+        
+        // for(int32_t i=0; i<localEdgesMap.size(); ++i)
+        // {
+        //     std::vector<Edge> &e = localEdgesMap[i];
+        //     for(Edge edge: e)
+        //         printf("%d ",edge.destination);
+
+        //     printf("~");
+        // }
 
 
     }

@@ -10,6 +10,8 @@
 
 #include "../global/mpiglobal.hpp"
 #include "../utils/helpers/inc/boostMPIHelpers.hpp"
+#include "../utils/helpers/inc/graphHelper.hpp"
+
 
 #include <boost/mpi.hpp>
 #include <boost/mpi/collectives.hpp>
@@ -17,6 +19,7 @@
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/map.hpp>
 #include <boost/serialization/serialization.hpp>
+
 
 #ifndef MY_GRAPH
 #define MY_GRAPH
