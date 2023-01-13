@@ -19,6 +19,11 @@
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/map.hpp>
 #include <boost/serialization/serialization.hpp>
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+
 
 
 #ifndef MY_GRAPH
@@ -54,7 +59,7 @@ private:
     std::map<int32_t, std::vector<Edge>> edges;
     
     // F.R.I.E.N.D.S
-    friend void convertEdgestoVector(std::vector<std::pair<int, std::vector<Edge>>> &edgesVector, Graph &graph);
+    friend void boostConvertEdgestoVector(std::vector<std::pair<int, std::vector<Edge>>> &edgesVector, Graph &graph);
     friend class boost::serialization::access;
     template <typename Archive>
     void serialize(Archive &ar, const unsigned int version)
@@ -73,7 +78,7 @@ public:
         totalEdges = 0;
     }
 
-    void initGraph();
+    void initGraph(boost::mpi::communicator world);
     void buildGraph(boost::mpi::communicator, Graph &graph);
 
     int32_t getNodeCount();

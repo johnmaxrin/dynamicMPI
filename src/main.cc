@@ -5,21 +5,17 @@ int main(int argc, char *argv[])
 {
     Graph graph(argv[1]);
 
-    
     boost::mpi::environment env(argc, argv);
     boost::mpi::communicator world;
 
     int rank = world.rank();
 
-    if (rank == 0)
-    {
-        printf("[#] Inside rank 0\n");
-        graph.initGraph();
-    }
-    MPIBARRIER(COMMONWORLD);
-    boost::mpi::broadcast(world, graph, 0);
+    graph.initGraph(world);
 
-    graph.buildGraph(world, graph);
+    MPIBARRIER(COMMONWORLD);
+    // boost::mpi::broadcast(world, graph, 0);
+
+    // graph.buildGraph(world, graph);
 
     MPI_Finalize();
 

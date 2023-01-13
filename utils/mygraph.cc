@@ -10,65 +10,70 @@ Starplat MPI Graph class implementation.
 
 using namespace std;
 
-void Graph::initGraph()
+void merge_maps(std::map<int, std::vector<Edge>> &a, std::map<int, std::vector<Edge>> &b)
 {
-    std::fstream infile;
-
-    std::string line;
-    infile.open(graphFile);
-
-    if (!infile.is_open())
+    for (auto &[key, value] : b)
     {
-        printf("[error] File not found \n");
-        exit(0);
+        a[key].insert(a[key].end(), value.begin(), value.end());
     }
-
-    printf("[#] Building graph from %s\n", graphFile.c_str());
-    while (std::getline(infile, line))
-    {
-
-        if (line.length() == 0 || line[0] < '0' || line[0] > '9')
-            continue;
-
-        std::stringstream ss(line);
-        totalEdges++;
-
-        Edge edge;
-        int32_t source;
-        int32_t destination;
-        int32_t weight;
-
-        ss >> source;
-        if (source > totalNodes)
-            totalNodes = source;
-
-        ss >> destination;
-        if (destination > totalNodes)
-            totalNodes = destination;
-
-        edge.source = source;
-        edge.destination = destination;
-        edge.weight = 1;
-        edge.id = source;
-
-        edges[source].push_back(edge);
-
-        ss >> weight;
-    }
-
-    ++totalNodes;
-
-    infile.close();
-    printf("[#] Edges parsed \n");
-
-    /*
-        Our graphs are designed so that the
-        node with the largest number +1
-        gives us the total number of nodes.
-    */
 }
 
-// --- Paralell --- //
+class MergeMapOp
+{
+public:
+    std::map<int32_t, std::vector<Edge>> operator()(std::map<int32_t, std::vector<Edge>> &a, const std::map<int32_t, std::vector<Edge>> &b) const
+    {
+        for (const auto &[key, val] : b)
+        {
+            auto it = a.find(key);
+            if (it != a.end())
+            {
+                it->second.insert(it->second.end(), val.begin(), val.end());
+            }
+            else
+            {
+                a.insert({key, val});
+            }
+        }
+
+        return a;
+    }
+
+    MergeMapOp& operator=(const MergeMapOp &other) = default;
+
+};
+
+// --- @Paralell --- //
+void Graph::initGraph(boost::mpi::communicator world)
+{
+
+    int32_t localTotalNodes = 0, localTotalEdges = 0;
+    std::map<int32_t, vector<Edge>> localEdges, globalEdges;
+    MPI_Offset readCount, offset;
+    MPI_File file;
+    boostFileIO(world, graphFile, file, readCount, offset, localTotalNodes, localTotalEdges, localEdges);
+    MPI_File_close(&file);
+
+    printf("[%d] Size: %ld\n", world.rank(), localEdges.size());
+
+
+    if (world.rank() == 0)
+    {
+
+        boost::mpi::reduce(world, localEdges, globalEdges, MergeMapOp(), 0);
+    }
+    else
+    {
+        boost::mpi::reduce(world, localEdges, MergeMapOp(), 0);
+    }
+
+    if (world.rank() == 0)
+    {
+        printf("Global Size: %ld \n", globalEdges.size());
+    }
+}
+
+// ---  @Serial  --- //
 void Graph::buildGraph(boost::mpi::communicator world, Graph &graph)
 {
     if (world.size() != 0)
@@ -87,26 +92,26 @@ void Graph::buildGraph(boost::mpi::communicator world, Graph &graph)
         std::vector<int> recvCount(world.size());
 
         if (world.rank() == MASTER)
-            convertEdgestoVector(edgesVector, graph);
+            boostConvertEdgestoVector(edgesVector, graph);
 
         boost::mpi::broadcast(world, edgesVector, MASTER);
 
-        populateDisplacement(totalNodes, world.size(), recvCount);
+        boostPopulateDisplacement(totalNodes, world.size(), recvCount);
         std::vector<pair<int32_t, std::vector<Edge>>> localEdgesVector(recvCount[world.rank()]);
+
+        // To be removed for testing only.
 
         boost::mpi::scatterv(world, edgesVector.data(), recvCount, localEdgesVector.data(), MASTER);
         std::map<int32_t, std::vector<Edge>> localEdgesMap;
-        convertVectorstoEdges(localEdgesMap, localEdgesVector);
+        boostConvertVectorstoEdges(localEdgesMap, localEdgesVector);
 
-        // Do the sorting -- Paralell -- 
+        // Do the sorting -- Paralell --
         for (int32_t i = 0; i < localEdgesMap.size(); ++i)
             boostSortNeighbours(localEdgesMap[i]);
-            
-        if(world.rank() == 0)
+
+        if (world.rank() == 0)
             printf("[#] Done sorting \n");
 
-        
-        
         // for(int32_t i=0; i<localEdgesMap.size(); ++i)
         // {
         //     std::vector<Edge> &e = localEdgesMap[i];
@@ -115,8 +120,6 @@ void Graph::buildGraph(boost::mpi::communicator world, Graph &graph)
 
         //     printf("~");
         // }
-
-
     }
 
     else
