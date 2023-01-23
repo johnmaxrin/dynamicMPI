@@ -1,5 +1,4 @@
-#include "../inc/mygraph.hpp"
-#include <boost/mpi.hpp>
+#include "inc/graph.hpp"
 
 int main(int argc, char *argv[])
 {
@@ -8,12 +7,10 @@ int main(int argc, char *argv[])
     boost::mpi::environment env(argc, argv);
     boost::mpi::communicator world;
 
-    int rank = world.rank();
+    
 
-    graph.initGraph(world);
+    graph.parseGraph(world);
 
-    MPIBARRIER(COMMONWORLD);
-    // boost::mpi::broadcast(world, graph, 0);
 
     // graph.buildGraph(world, graph);
 
