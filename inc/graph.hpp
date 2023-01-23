@@ -545,7 +545,7 @@ public:
     }
     else
     {
-      printf("[Warning!][%d] Graph is too small to be parallelized using this many processes. Decrease the number of processes.\n", world.rank());
+      printf("[Warning!][%d] The process got single vertex.\n", world.rank());
       exit(0);
     }
     // for (int i = 0; i < localTotal; ++i)
