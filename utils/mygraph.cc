@@ -18,58 +18,72 @@ void merge_maps(std::map<int, std::vector<Edge>> &a, std::map<int, std::vector<E
     }
 }
 
-class MergeMapOp
-{
-public:
-    std::map<int32_t, std::vector<Edge>> operator()(std::map<int32_t, std::vector<Edge>> &a, const std::map<int32_t, std::vector<Edge>> &b) const
-    {
-        for (const auto &[key, val] : b)
-        {
-            auto it = a.find(key);
-            if (it != a.end())
-            {
-                it->second.insert(it->second.end(), val.begin(), val.end());
-            }
-            else
-            {
-                a.insert({key, val});
-            }
-        }
 
-        return a;
-    }
-
-    MergeMapOp& operator=(const MergeMapOp &other) = default;
-
-};
 
 // --- @Paralell --- //
 void Graph::initGraph(boost::mpi::communicator world)
 {
 
     int32_t localTotalNodes = 0, localTotalEdges = 0;
-    std::map<int32_t, vector<Edge>> localEdges, globalEdges;
+    std::map<int32_t, vector<Edge>> localEdges;
     MPI_Offset readCount, offset;
     MPI_File file;
+    printf("Hi\n");
     boostFileIO(world, graphFile, file, readCount, offset, localTotalNodes, localTotalEdges, localEdges);
     MPI_File_close(&file);
 
     printf("[%d] Size: %ld\n", world.rank(), localEdges.size());
 
-
-    if (world.rank() == 0)
+    int num_nodes ;  
+    num_nodes = (int)world.rank();
+    for(auto it = localEdges.begin();it!=localEdges.end();it++)
     {
-
-        boost::mpi::reduce(world, localEdges, globalEdges, MergeMapOp(), 0);
-    }
-    else
-    {
-        boost::mpi::reduce(world, localEdges, MergeMapOp(), 0);
+        num_nodes = max(num_nodes, (*it).first);
     }
 
-    if (world.rank() == 0)
+    num_nodes = boost::mpi::all_reduce(world, num_nodes, boost::mpi::maximum<int>())+1;
+    cout<<"num "<<num_nodes<<endl;
+
+    int vertex_partition_size = (num_nodes+world.size()-1)/world.size();
+
+    std::vector<std::vector<Edge>> adjacency_list_group(vertex_partition_size);
+
+    std::vector<std::vector<std::vector<Edge>>> adjacency_list_3d(world.size(),adjacency_list_group);
+    
+    std::vector<int> len(num_nodes);
+    for(auto it = localEdges.begin();it!=localEdges.end();it++)
     {
-        printf("Global Size: %ld \n", globalEdges.size());
+        int source = (*it).first;
+        int proc_num = source/vertex_partition_size;
+        adjacency_list_3d[proc_num][source % vertex_partition_size].insert(adjacency_list_3d[proc_num][source % vertex_partition_size].end(),(*it).second.begin(),(*it).second.end());
+        len[source] = (*it).second.size();
+    }
+    int * index_of_nodes = new int [num_nodes];
+    MPI_Allreduce(len.data(),index_of_nodes,len.size(),MPI_INT,MPI_SUM,MPI_COMM_WORLD);
+    cout<<"reduce_done"<<endl;
+    boost::mpi::all_to_all(world, adjacency_list_3d, adjacency_list_3d);
+    cout<<"all done"<<endl;
+    
+    std::vector<Edge> local_csr;
+    for(int i=0;i<vertex_partition_size;i++)
+    {   
+        for(int j=0;j<world.size();j++)
+        {
+            local_csr.insert(local_csr.end(), adjacency_list_3d[j][i].begin(),adjacency_list_3d[j][i].end());
+        }
+    }
+
+    if(world.rank()==0)
+    {
+        for(int i=0;i<num_nodes;i++)
+        {
+            cout<<index_of_nodes[i]<<" ";
+        }cout<<endl;
+        for(int i=0;i<local_csr.size();i++)
+        {
+            cout<<local_csr[i].destination<<" ";
+        }cout<<endl;
+
     }
 }
 

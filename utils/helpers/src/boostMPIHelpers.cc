@@ -38,8 +38,11 @@ void boostFileIO(boost::mpi::communicator world, std::string graphFile, MPI_File
     MPI_Offset fileSize;
     MPI_File_open(MPI_COMM_WORLD, graphFile.data(), MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
     MPI_File_get_size(fh, &fileSize);
-    offset = world.rank() * (fileSize / world.size());
-    readCount = (world.rank() == world.size() - 1) ? fileSize - offset : fileSize / world.size();
+    
+    int read_size = ((((fileSize+3)/4) + world.size()-  1) / world.size())*4;
+    offset = world.rank() * read_size;
+    readCount = (world.rank() == world.size() - 1) ? fileSize - offset : read_size;
+    //cout<<read_size<<" "<<offset<<" "<<readCount<<" dsd"<<endl;
     char *buffer = (char *)malloc(readCount);
     MPI_Status status;
     MPI_File_read_at_all(fh, offset, buffer, readCount, MPI_BYTE, &status);
