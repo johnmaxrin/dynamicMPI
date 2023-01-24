@@ -45,8 +45,12 @@ void boostFileIO(boost::mpi::communicator world, std::string graphFile, MPI_File
     //cout<<read_size<<" "<<offset<<" "<<readCount<<" dsd"<<endl;
     char *buffer = (char *)malloc(readCount);
     MPI_Status status;
-    MPI_File_read_at_all(fh, offset, buffer, readCount, MPI_BYTE, &status);
-
+    int fileErr = MPI_File_read_at_all(fh, offset, buffer, readCount, MPI_BYTE, &status);
+    if(fileErr != MPI_SUCCESS)
+    {
+        printf("File reading error");
+        exit(0);
+    }
     readFromFile(buffer, readCount,nodes, edges,localEdges,world);
 }
 
