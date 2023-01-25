@@ -12,45 +12,59 @@ void sortNeighbours(std::vector<Edge> &e)
          });
 }
 
-void readFromFile(char *buffer, MPI_Offset readCount, int32_t &nodes, int32_t &edges, std::map<int32_t, std::vector<Edge>> &localedges, boost::mpi::communicator world)
+void readFromFile(std::string filePath, int32_t &nodes, int32_t &edges, std::vector<Edge> &localedges)
 {   
     nodes = 0;
     edges = 0;
-    std::stringstream ss;
-    ss.write(buffer, readCount);
-    std::string str = ss.str();
 
-    std::string line;
+    std::ifstream infile;
+     infile.open(filePath);
+     std::string line;
 
-    while (std::getline(ss, line))
-    {
 
-        if (line.length() == 0 || line[0] < '0' || line[0] > '9')
-            continue;
+     while (std::getline(infile,line))
+     {
+
+      // std::stringstream(line);
+
+       if (line.length()==0||line[0] < '0' || line[0] >'9') {
+          continue;
+
+	    	}
 
         std::stringstream ss(line);
-        edges++;
 
-        Edge edge;
+        edges++;
+         
+        //edgesTotal++; //TO BE REMOVED 
+
+        //edgesTotal++; //TO BE REMOVED
+
+
+        Edge e;
+        
+    
         int32_t source;
         int32_t destination;
-        int32_t weight;
+        int32_t weightVal;
 
-        ss >> source;
-        if (source > nodes)
-            nodes = source;
+           ss>>source; 
+           if(source>nodes)
+              nodes=source;
 
-        ss >> destination;
-        if (destination > nodes)
-            nodes = destination;
+            ss>>destination;  
+            if(destination>nodes)
+               nodes=destination;  
 
-        edge.source = source;
-        edge.destination = destination;
-        edge.weight = 1;
-        edge.id = source;
+           e.source=source;
+           e.destination=destination;
+           e.weight=1;
+           e.id = source;
+           
+           ss >> weightVal;
 
-        ss >> weight;
+        localedges.push_back(e);    
+     }
 
-        localedges[source].push_back(edge);
-    }
+     infile.close();
 }

@@ -33,22 +33,47 @@ void Graph::initGraph(boost::mpi::communicator world)
 {
 
     int32_t localTotalNodes = 0, localTotalEdges = 0;
-    std::map<int32_t, vector<Edge>> localEdges;
+    
 
-    MPI_Offset readCount, offset;
-    MPI_File file;
-    boostFileIO(world, graphFile, file, readCount, offset, localTotalNodes, localTotalEdges, localEdges);
-    MPI_File_close(&file);
+    //MPI_Offset readCount, offset;
+    //MPI_File file;
+    //boostFileIO(world, graphFile, file, readCount, offset, localTotalNodes, localTotalEdges, localEdges);
+    //MPI_File_close(&file);
 
-    int num_nodes;
-    num_nodes = (int)world.rank();
-    for (auto it = localEdges.begin(); it != localEdges.end(); it++)
-    {
-        num_nodes = max(num_nodes, (*it).first);
+
+    int num_nodes, num_edges;
+    int scatter_size;
+    std::vector<Edge> Edges;
+    if(world.rank()==0)
+    {   
+        readFromFile(graphFile, num_nodes, num_edges, Edges);
+        assert(num_edges == Edges.size());
     }
+    
+    MPIBARRIER(COMMONWORLD);
+    boost::mpi::broadcast(world, num_edges,0);
+    vector<int> sizes;
+    for(int i=0;i<world.size();i++)
+    {
+        sizes.push_back(num_edges/world.size() +  (i < (num_edges % world.size()) ? 1 : 0));
+    }
+    scatter_size = num_edges/world.size() +  (world.rank() < (num_edges % world.size()) ? 1 : 0) ;
+    boost::mpi::broadcast(world, num_nodes,0);
+    cout<<num_edges<<" "<<num_nodes<<" "<<scatter_size<<endl;
 
-    num_nodes = boost::mpi::all_reduce(world, num_nodes, boost::mpi::maximum<int>()) + 1;
-    cout << "num " << num_nodes << endl;
+    Edge * localEdges = new Edge [scatter_size]; 
+    boost::mpi::scatterv(world, Edges, sizes, localEdges, 0);
+    
+    
+    
+    //num_nodes = (int)world.rank();
+    //for (auto it = localEdges.begin(); it != localEdges.end(); it++)
+    //{
+    //    num_nodes = max(num_nodes, (*it).first);
+   // }
+
+    //num_nodes = boost::mpi::all_reduce(world, num_nodes, boost::mpi::maximum<int>()) + 1;
+    //cout << "num " << num_nodes << endl;
 
     
     std::vector<Edge> local_csr;
@@ -61,29 +86,25 @@ void Graph::initGraph(boost::mpi::communicator world)
     std::vector<std::vector<std::vector<Edge>>> adjacency_list_3d(world.size(), adjacency_list_group);
     std::vector<std::vector<std::vector<Edge>>> rev_adjacency_list_3d(world.size(), adjacency_list_group);
 
-    std::vector<int> index(num_nodes);
+    std::vector<int> index(num_nodes,0);
     std::vector<int> rev_index(num_nodes,0);
-    for (auto it = localEdges.begin(); it != localEdges.end(); it++)
+    for (int i = 0; i < scatter_size; i++)
     {
-        int source = (*it).first;
+        int source = localEdges[i].source;
+        int destination = localEdges[i].destination;
+        //cout<<world.rank()<<" "<<source<<" "<<destination<<" hiii "<<endl;
         int proc_num = source / vertex_partition_size;
-        adjacency_list_3d[proc_num][source % vertex_partition_size].insert(adjacency_list_3d[proc_num][source % vertex_partition_size].end(), (*it).second.begin(), (*it).second.end());
-        index[source] = (*it).second.size();
+        adjacency_list_3d[proc_num][source % vertex_partition_size].push_back((localEdges[i]));
+        index[source] = index[source]+ 1;
 
-        for(auto ir = (*it).second.begin(); ir !=(*it).second.end();ir++)
-        {
-            int destination =  (*ir).destination;
-            if(destination >= num_nodes)
-            {exit(-1);}
-            rev_index[destination] = rev_index[destination] +1;
+        //if(destination >= num_nodes)
+        //    {cout<<"should not print"<<endl; exit(-1);}
 
-            int proc_num = destination / vertex_partition_size;
-
-            rev_adjacency_list_3d[proc_num][destination % vertex_partition_size].push_back((*ir));
-
-        }
+        proc_num = destination / vertex_partition_size;
+        rev_adjacency_list_3d[proc_num][destination % vertex_partition_size].push_back((localEdges[i]));
+         rev_index[destination] = rev_index[destination] +1;
     }
-    localEdges.clear();
+    delete [] localEdges;
     int *index_of_nodes = new int[num_nodes];
     int *rev_index_of_nodes = new int[num_nodes];
     MPI_Allreduce(index.data(), index_of_nodes, index.size(), MPI_INT, MPI_SUM, MPI_COMM_WORLD);
@@ -114,8 +135,8 @@ void Graph::initGraph(boost::mpi::communicator world)
         local_csr.insert(local_csr.end(), temp1.begin(), temp1.end());
         rev_local_csr.insert(rev_local_csr.end(), temp2.begin(), temp2.end());
     }
-    /*
-    if (world.rank() == 0)
+    
+    /*if (world.rank() == 0)
     {
         for (int i = 0; i < num_nodes; i++)
         {
@@ -138,7 +159,7 @@ void Graph::initGraph(boost::mpi::communicator world)
             cout << rev_local_csr[i].source << " ";
         }
         cout << endl;
-    } */
+    }*/ 
 }
 
 

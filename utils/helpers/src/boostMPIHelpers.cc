@@ -33,7 +33,7 @@ void boostSortNeighbours(std::vector<Edge> &e)
                                      });
 }
 
-void boostFileIO(boost::mpi::communicator world, std::string graphFile, MPI_File &fh, MPI_Offset &readCount, MPI_Offset &offset, int32_t &nodes, int32_t &edges, std::map<int32_t,std::vector<Edge>> &localEdges)
+/*void boostFileIO(boost::mpi::communicator world, std::string graphFile, MPI_File &fh, MPI_Offset &readCount, MPI_Offset &offset, int32_t &nodes, int32_t &edges, std::map<int32_t,std::vector<Edge>> &localEdges)
 {
     MPI_Offset fileSize;
     MPI_File_open(MPI_COMM_WORLD, graphFile.data(), MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
@@ -52,5 +52,5 @@ void boostFileIO(boost::mpi::communicator world, std::string graphFile, MPI_File
         exit(0);
     }
     readFromFile(buffer, readCount,nodes, edges,localEdges,world);
-}
+}*/
 
