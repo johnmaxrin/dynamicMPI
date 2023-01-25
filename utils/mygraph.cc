@@ -46,7 +46,10 @@ void Graph::initGraph(boost::mpi::communicator world)
     std::vector<Edge> Edges;
     if(world.rank()==0)
     {   
+        printf("Started reading from file\n");
         readFromFile(graphFile, num_nodes, num_edges, Edges);
+        num_nodes = num_nodes +1;
+        printf("Finished reading from file\n");
         assert(num_edges == Edges.size());
     }
     
@@ -59,11 +62,12 @@ void Graph::initGraph(boost::mpi::communicator world)
     }
     scatter_size = num_edges/world.size() +  (world.rank() < (num_edges % world.size()) ? 1 : 0) ;
     boost::mpi::broadcast(world, num_nodes,0);
-    cout<<num_edges<<" "<<num_nodes<<" "<<scatter_size<<endl;
+    //cout<<num_edges<<" "<<num_nodes<<" "<<scatter_size<<endl;
 
     Edge * localEdges = new Edge [scatter_size]; 
+    if(world.rank() ==0)printf("Started Scatter\n");
     boost::mpi::scatterv(world, Edges, sizes, localEdges, 0);
-    
+    if(world.rank() ==0)printf("Finished Scatter\n");
     
     
     //num_nodes = (int)world.rank();
@@ -107,17 +111,20 @@ void Graph::initGraph(boost::mpi::communicator world)
     delete [] localEdges;
     int *index_of_nodes = new int[num_nodes];
     int *rev_index_of_nodes = new int[num_nodes];
+    if(world.rank() ==0)printf("Started Reduce\n");
     MPI_Allreduce(index.data(), index_of_nodes, index.size(), MPI_INT, MPI_SUM, MPI_COMM_WORLD);
     index.clear();
     
     MPI_Allreduce(rev_index.data(), rev_index_of_nodes, rev_index.size(), MPI_INT, MPI_SUM, MPI_COMM_WORLD);
     rev_index.clear();
     
-    cout << "reduce_done" << endl;
+    if(world.rank() ==0)printf("Finished Reduce\n");
+    if(world.rank() ==0)printf("Started All to All\n");
+    if(world.rank() ==31)printf("Started All to All\n");
     boost::mpi::all_to_all(world, adjacency_list_3d, adjacency_list_3d);
     boost::mpi::all_to_all(world, rev_adjacency_list_3d, rev_adjacency_list_3d);
-    cout << "all done" << endl;
-
+    if(world.rank() ==0)printf("Finished all to all\n");
+    if(world.rank() ==31)printf("Finished All to All\n");
 
     
     for (int i = 0; i < vertex_partition_size; i++)
