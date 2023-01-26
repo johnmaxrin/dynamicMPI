@@ -46,10 +46,10 @@ void Graph::initGraph(boost::mpi::communicator world)
     std::vector<Edge> Edges;
     if(world.rank()==0)
     {   
-        printf("Started reading from file\n");
+        cout<<"Started reading from file";
         readFromFile(graphFile, num_nodes, num_edges, Edges);
         num_nodes = num_nodes +1;
-        printf("Finished reading from file\n");
+        cout<<"Finished reading from file";
         assert(num_edges == Edges.size());
     }
     
@@ -62,7 +62,7 @@ void Graph::initGraph(boost::mpi::communicator world)
     }
     scatter_size = num_edges/world.size() +  (world.rank() < (num_edges % world.size()) ? 1 : 0) ;
     boost::mpi::broadcast(world, num_nodes,0);
-    //cout<<num_edges<<" "<<num_nodes<<" "<<scatter_size<<endl;
+    cout<<num_edges<<" "<<num_nodes<<" "<<scatter_size<<endl;
 
     Edge * localEdges = new Edge [scatter_size]; 
     if(world.rank() ==0)printf("Started Scatter\n");
