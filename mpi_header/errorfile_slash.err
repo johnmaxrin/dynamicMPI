@@ -1,0 +1,16 @@
+In file included from /lfs/usrhome/oth/rnintern/scratch/robert/StarPlatMPI/GraphDSL/Playground/DynamicMPI/manual/mpi_header/main.cc:1:
+/lfs/usrhome/oth/rnintern/scratch/robert/StarPlatMPI/GraphDSL/Playground/DynamicMPI/manual/mpi_header/mpi_graph.hpp:136:1: warning: "/*" within comment [-Wcomment]
+  136 | /*
+      |  
+/lfs/usrhome/oth/rnintern/scratch/robert/StarPlatMPI/GraphDSL/Playground/DynamicMPI/manual/mpi_header/mpi_graph.hpp:148:1: warning: "/*" within comment [-Wcomment]
+  148 | /*
+      |  
+In file included from /lfs/usrhome/oth/rnintern/scratch/MPI_Comparison/boost/install_dir/include/boost/assert.hpp:58,
+                 from /lfs/usrhome/oth/rnintern/scratch/MPI_Comparison/boost/install_dir/include/boost/serialization/collections_load_imp.hpp:25,
+                 from /lfs/usrhome/oth/rnintern/scratch/MPI_Comparison/boost/install_dir/include/boost/serialization/vector.hpp:33,
+                 from /lfs/usrhome/oth/rnintern/scratch/robert/StarPlatMPI/GraphDSL/Playground/DynamicMPI/manual/mpi_header/mpi_graph.hpp:17,
+                 from /lfs/usrhome/oth/rnintern/scratch/robert/StarPlatMPI/GraphDSL/Playground/DynamicMPI/manual/mpi_header/main.cc:1:
+/lfs/usrhome/oth/rnintern/scratch/robert/StarPlatMPI/GraphDSL/Playground/DynamicMPI/manual/mpi_header/mpi_graph.hpp: In member function ‘void Graph::initGraph(boost::mpi::communicator)’:
+/lfs/usrhome/oth/rnintern/scratch/robert/StarPlatMPI/GraphDSL/Playground/DynamicMPI/manual/mpi_header/mpi_graph.hpp:86:30: warning: comparison of integer expressions of different signedness: ‘int32_t’ {aka ‘int’} and ‘std::vector<Edge>::size_type’ {aka ‘long unsigned int’} [-Wsign-compare]
+   86 |             assert(num_edges == Edges.size());
+      |                    ~~~~~~~~~~^~~~~~~~~~~~~~~
